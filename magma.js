@@ -1,8 +1,6 @@
-// magma.js
 import crypto from 'crypto';
 import { Buffer } from 'buffer';
 
-// Официальная таблица замен (S-Box) ГОСТ Р 34.12-2015
 const S_BOX = new Uint8Array([
     1,  7, 14, 13,  0,  5,  8,  3,  4, 15, 10,  6,  9, 12, 11,  2,
     8, 14,  2,  5,  6,  9,  1, 12, 15,  4, 11,  0, 13, 10,  3,  7,
@@ -14,7 +12,6 @@ const S_BOX = new Uint8Array([
     1, 15, 13,  0,  5,  7, 10,  4,  9,  2,  3, 14,  6, 11,  8, 12
 ]);
 
-// Генерация раундовых ключей (8 ключей по 32 бита) из переданного keyBuffer
 function deriveRoundKeys(keyBuffer) {
     const keys = new Uint32Array(8);
     for (let i = 0; i < 8; i++) {
@@ -23,7 +20,6 @@ function deriveRoundKeys(keyBuffer) {
     return keys;
 }
 
-// Шаговая функция Фейстеля t(X) + циклический сдвиг на 11 бит
 function fieldF(data, keyPart) {
     const sum = (data + keyPart) >>> 0;
     let sBoxResult = 0;
@@ -39,7 +35,6 @@ function fieldF(data, keyPart) {
     return ((sBoxResult << 11) | (sBoxResult >>> 21)) >>> 0;
 }
 
-// Шифрование одного 8-байтового блока с использованием вычисленных roundKeys
 function encryptBlock(blockBuffer, roundKeys) {
     let n1 = blockBuffer.readUint32LE(0);
     let n2 = blockBuffer.readUint32LE(4);
@@ -58,11 +53,6 @@ function encryptBlock(blockBuffer, roundKeys) {
 }
 
 export const magma = {
-    /**
-     * Шифрование строки в Base64 (Режим гаммирования CTR)
-     * @param {string} plainText - Открытый текст
-     * @param {Buffer} keyBuffer - 32-байтный сессионный ключ Магмы
-     */
     encrypt(plainText, keyBuffer) {
         if (!plainText) return plainText;
         if (!keyBuffer || keyBuffer.length !== 32) throw new Error("Invalid Magma key length");
@@ -70,7 +60,6 @@ export const magma = {
         const plainBytes = Buffer.from(plainText, 'utf8');
         const roundKeys = deriveRoundKeys(keyBuffer);
         
-        // Импортируем crypto динамически внутри, чтобы не зависеть от глобального контекста 
         const iv = crypto.randomBytes(8);
         
         const counter = Buffer.alloc(8);
@@ -86,7 +75,6 @@ export const magma = {
                 encryptedBytes[i + j] = plainBytes[i + j] ^ gamma[j];
             }
 
-            // Инкремент 64-битного счетчика (Little-Endian)
             let carry = 1;
             for (let b = 0; b < 8; b++) {
                 const sum = counter[b] + carry;
@@ -99,11 +87,6 @@ export const magma = {
         return Buffer.concat([iv, encryptedBytes]).toString('base64');
     },
 
-    /**
-     * Расшифрование Base64 строки обратно в обычный текст
-     * @param {string} cipherTextBase64 - Зашифрованный текст в Base64
-     * @param {Buffer} keyBuffer - 32-байтный сессионный ключ Магмы
-     */
     decrypt(cipherTextBase64, keyBuffer) {
         if (!cipherTextBase64) return cipherTextBase64;
         if (!keyBuffer || keyBuffer.length !== 32) throw new Error("Invalid Magma key length");
@@ -130,7 +113,6 @@ export const magma = {
                 decryptedBytes[i + j] = cipherBytes[i + j] ^ gamma[j];
             }
 
-            // Инкремент 64-битного счетчика (Little-Endian)
             let carry = 1;
             for (let b = 0; b < 8; b++) {
                 const sum = counter[b] + carry;
