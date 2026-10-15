@@ -1,7 +1,6 @@
 import crypto from 'crypto';
 import fs from 'fs';
-import WebSocket from 'ws';
-
+import { forwardToUser } from './wsController.js';
 
 let serverPrivateKeyECDSA, clientPublicKeyECDSA;
 
@@ -70,12 +69,12 @@ export async function handleClientHandshake(clientPublicKeyBase64) {
     };
 }
 
-export async function verifyClientSignature(clientPublicKeyBase64, signature, ws) {
+export async function verifyClientSignature(clientPublicKeyBase64, signature) {
     const clientPublicKeyDH = clientPublicKeyBase64;
     const clientSignatureHex = signature;
     if (!clientPublicKeyDH || !clientSignatureHex) {
         console.error("🛑 Ошибка: Клиент не прислал ClientPublicKey или Signature!");
-        ws.close();
+        this.close();
         return;
     }
     const dataToVerify = Buffer.from(clientPublicKeyDH, 'base64');
@@ -93,32 +92,30 @@ export async function verifyClientSignature(clientPublicKeyBase64, signature, ws
 
         if (!isClientValid) {
             console.error(`🛑 Подпись клиента ${payload.Name} не валидна! Разрыв соединения.`);
-            ws.close();
+            //ws.close();
             return;
         }
 
         const { serverPublicKey, magmaKey } = await establishSessionKeys(clientPublicKeyDH);
-                ws.magmaKey = magmaKey;
+        this.magmaKey = magmaKey;
 
-                const serverSignBuffer = crypto.sign(
-                    'sha256',
-                    Buffer.from(serverPublicKey, 'utf8'),
-                    serverPrivateKeyECDSA
-                );
+        const serverSignBuffer = crypto.sign(
+            'sha256',
+            Buffer.from(serverPublicKey, 'utf8'),
+            serverPrivateKeyECDSA
+        );
 
-                const serverSignHex = serverSignBuffer.toString('hex');
-                const serverHandshake = JSON.stringify({
-                    type: 'serverHandshake',
-                    ServerPublicKey: serverPublicKey,
-                    Signature: serverSignHex
-                });
+        const serverSignHex = serverSignBuffer.toString('hex');
+        const serverHandshake = {
+            type: 'serverHandshake',
+            ServerPublicKey: serverPublicKey,
+            Signature: serverSignHex
+        };
 
-                if (ws.readyState === WebSocket.OPEN) {
-                    ws.send(serverHandshake);
-                }
+        forwardToUser(this.userName, serverHandshake);
 
     } catch (err) {
         console.error("❌ Исключение при проверке подписи:", err.message);
-        ws.close();
+        this.close();
     }
 }

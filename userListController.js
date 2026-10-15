@@ -1,12 +1,11 @@
 import { all } from './dataBaseController.js';
-import WebSocket from 'ws';
-import { magma } from './magma.js';
+import { forwardToAll } from './wsController.js';
 
-export async function sendUsersListToClient(ws, wss) {
-    if (!ws.userName) return;
+async function sendUsersListToClient() {
+    if (!this.userName) return;
 
     try {
-        const currentClientName = ws.userName.trim();
+        const currentClientName = this.userName.trim();
 
         const dbUsers = await all(`
             SELECT DISTINCT TRIM(sender) AS name FROM messages WHERE sender IS NOT NULL AND sender != ''
@@ -16,50 +15,17 @@ export async function sendUsersListToClient(ws, wss) {
 
         const allRegisteredNames = dbUsers.map(row => row.name.trim());
 
-        const onlineNames = Array.from(wss.clients)
-            .map(client => client.userName ? client.userName.trim() : '')
-            .filter(name => name !== '');
-
-        const combinedNames = [...allRegisteredNames, ...onlineNames];
-
-        const uniqueFilteredNames = [];
-        const seenNames = new Set();
-
-        seenNames.add(currentClientName.toLowerCase());
-
-        for (const name of combinedNames) {
-            const lowerName = name.toLowerCase();
-            if (!seenNames.has(lowerName)) {
-                seenNames.add(lowerName);
-                uniqueFilteredNames.push(name);
-            }
-        }
-
         const chatListObj = {
             type: 'chatsList',
-            Names: uniqueFilteredNames
+            Names: allRegisteredNames
         };
 
-        const rawJsonString = JSON.stringify(chatListObj);
-
-        const encryptedDataStr = magma.encrypt(rawJsonString, ws.magmaKey);
-
-        const finalPayload = JSON.stringify({
-            "encryptedData": encryptedDataStr
-        });
-
-        if (ws.readyState === WebSocket.OPEN) {
-            ws.send(finalPayload);
-        }
+        forwardToAll(chatListObj);
     } catch (err) {
         console.error('❌ Ошибка при формировании списка пользователей:', err.message);
     }
 }
 
-export async function broadcastUsersListToAll(wss) {
-    for (const client of wss.clients) {
-        if (client.readyState === WebSocket.OPEN && client.userName) {
-            await sendUsersListToClient(client, wss);
-        }
-    }
+export async function broadcastUsersListToAll() {
+    sendUsersListToClient.call(this);
 }

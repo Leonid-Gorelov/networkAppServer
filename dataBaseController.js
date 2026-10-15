@@ -3,7 +3,7 @@ import { open } from 'sqlite';
 
 let db;
 
-export async function initDb(){
+export async function initDb() {
     try {
         db = await open({
             filename: 'chat.db',
@@ -29,18 +29,14 @@ export async function initDb(){
     }
 }
 
-export async function get(command, args){
+export async function get(command, args) {
     return await db.get(command, args);
 }
 
-export async function run(command, args){
+export async function run(command, args) {
     return await db.run(command, args);
 }
 
-export async function all(command, args){
+export async function all(command, args) {
     return await db.all(command, args);
-}
-
-export async function getSequence(name){
-    return await db.get(`SELECT seq FROM sqlite_sequence WHERE name = ?`, [name]);
 }

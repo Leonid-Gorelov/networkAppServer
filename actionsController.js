@@ -5,48 +5,41 @@ import { handleMarkAsRead } from './markAsReadController.js';
 import { handleCallOffer } from './callController.js';
 import { handleAnswer } from './callController.js';
 import { handleIceCandidate } from './callController.js';
-import { handleDisconnect } from './disconnectController.js';
 import { handleFileChunk } from './fileController.js';
 import { handleDownloadFile } from './fileController.js';
 import { handleGetChat } from './chatController.js';
+import { all, run } from './dataBaseController.js';
+import { handleUser } from './userController.js';
 
-export async function handleClientAction(payload, ws, wss) {
+export async function handleClientAction(payload) {
     console.log(payload.type);
     switch (payload.type) {
         case 'user':
-            await verifyClientSignature(payload.ClientPublicKey, payload.Signature, ws);
-
-            ws.userName = payload.Name;
-            console.log(`👤 Пользователь вошел в сеть: ${ws.userName}`);
-
-            await broadcastUsersListToAll(wss);
+        handleUser.call(this, payload);
             break;
         case 'chatMessage':
-            handleChatMessage(payload, ws, wss);
+            handleChatMessage.call(this, payload);
             break;
         case 'markAsRead':
-            handleMarkAsRead(payload, ws, wss);
+            handleMarkAsRead.call(this, payload);
             break;
         case 'callOffer':
-            handleCallOffer(payload, wss);
+            handleCallOffer.call(this, payload);
             break;
         case 'callAnswer':
-            handleAnswer(payload, wss);
+            handleAnswer.call(this, payload);
             break;
         case 'iceCandidate':
-            handleIceCandidate(payload, wss);
+            handleIceCandidate.call(this, payload);
             break;
         case 'getChat':
-            handleGetChat(payload, ws, wss);
+            handleGetChat.call(this, payload);
             break;
         case 'fileChunk':
-            handleFileChunk(payload, ws, wss);
+            handleFileChunk.call(this, payload);
             break;
-        case 'downloadFile':
-            handleDownloadFile(payload, ws, wss);
-            break;
-        case 'disconnect':
-            handleDisconnect(ws, wss);
+        case 'fileDownloadRequest':
+            handleDownloadFile.call(this, payload);
             break;
         default:
             break;

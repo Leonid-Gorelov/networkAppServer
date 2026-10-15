@@ -2,14 +2,14 @@ import crypto from 'crypto';
 import { Buffer } from 'buffer';
 
 const S_BOX = new Uint8Array([
-    1,  7, 14, 13,  0,  5,  8,  3,  4, 15, 10,  6,  9, 12, 11,  2,
-    8, 14,  2,  5,  6,  9,  1, 12, 15,  4, 11,  0, 13, 10,  3,  7,
-    5, 13, 15,  6,  9,  2, 12, 10, 11,  7,  8,  1,  4,  3, 14,  0,
-    7, 15,  5, 10,  8,  1,  6, 13,  0,  4,  9, 14, 11,  2,  12, 3,
-    6, 12,  7,  1,  5, 15, 13,  8,  4, 10,  9, 14,  0,  3, 11,  2,
-    4, 11, 10,  0,  7,  2,  1, 13,  3,  6,  8,  5,  9, 12, 15, 14,
-    13,11,  4,  1,  3, 15,  5,  9,  0, 10, 14,  7,  6,  8,  2, 12,
-    1, 15, 13,  0,  5,  7, 10,  4,  9,  2,  3, 14,  6, 11,  8, 12
+    1, 7, 14, 13, 0, 5, 8, 3, 4, 15, 10, 6, 9, 12, 11, 2,
+    8, 14, 2, 5, 6, 9, 1, 12, 15, 4, 11, 0, 13, 10, 3, 7,
+    5, 13, 15, 6, 9, 2, 12, 10, 11, 7, 8, 1, 4, 3, 14, 0,
+    7, 15, 5, 10, 8, 1, 6, 13, 0, 4, 9, 14, 11, 2, 12, 3,
+    6, 12, 7, 1, 5, 15, 13, 8, 4, 10, 9, 14, 0, 3, 11, 2,
+    4, 11, 10, 0, 7, 2, 1, 13, 3, 6, 8, 5, 9, 12, 15, 14,
+    13, 11, 4, 1, 3, 15, 5, 9, 0, 10, 14, 7, 6, 8, 2, 12,
+    1, 15, 13, 0, 5, 7, 10, 4, 9, 2, 3, 14, 6, 11, 8, 12
 ]);
 
 function deriveRoundKeys(keyBuffer) {
@@ -30,7 +30,7 @@ function fieldF(data, keyPart) {
         const substituted = S_BOX[(i * 16) + nibble];
         sBoxResult |= (substituted << shift);
     }
-    
+
     sBoxResult = sBoxResult >>> 0;
     return ((sBoxResult << 11) | (sBoxResult >>> 21)) >>> 0;
 }
@@ -59,9 +59,9 @@ export const magma = {
 
         const plainBytes = Buffer.from(plainText, 'utf8');
         const roundKeys = deriveRoundKeys(keyBuffer);
-        
+
         const iv = crypto.randomBytes(8);
-        
+
         const counter = Buffer.alloc(8);
         iv.copy(counter);
 
